@@ -12,13 +12,13 @@ import java.util.stream.Collectors;
 
 public class Packer {
 
-    public static final String INDEX = "index";
-    public static final String WEIGHT = "weight";
-    public static final String COST = "cost";
-    public static final String PACKAGE_REGEX = "\\((?<" + INDEX + ">\\d+)\\,(?<" + WEIGHT + ">\\d+(\\.\\d{1,2})?)\\,€(?<" + COST + ">\\d+(\\.\\d{1,2})?)\\)";
-    public static final int MAX_ITEMS_IN_LINE = 15;
-    public static final int MAX_WEIGHT = 100;
-    public static final int MAX_COST = 100;
+    private static final String INDEX = "index";
+    private static final String WEIGHT = "weight";
+    private static final String COST = "cost";
+    private static final String PACKAGE_REGEX = "\\((?<" + INDEX + ">\\d+)\\,(?<" + WEIGHT + ">\\d+(\\.\\d{1,2})?)\\,€(?<" + COST + ">\\d+(\\.\\d{1,2})?)\\)";
+    private static final int MAX_ITEMS_IN_LINE = 15;
+    private static final int MAX_WEIGHT = 100;
+    private static final int MAX_COST = 100;
 
     public static String pack(String inputPath) throws APIException {
         return parsedInputFile(inputPath).stream()
@@ -109,7 +109,6 @@ public class Packer {
 
         return new ParsedLine(maxWeight, packages);
     }
-
 
     private static String getBestCombinationAsString(double maxWeight, List<Package> packages) {
         List<Combination> combinations = getCombination(packages);
