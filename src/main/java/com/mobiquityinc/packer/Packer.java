@@ -64,7 +64,7 @@ public class Packer {
         List<Package> packages = new ArrayList<>();
 
         while (matcher.find()) {
-            if (matcher.start() != lastEnd + 1) {
+            if (matcher.start() != lastEnd + 1 || splited[1].charAt(lastEnd) != ' ') {
                 throw new APIException(String.format("Right side of `:` must be in the following pattern (%s) separated by space", PACKAGE_REGEX), line, lineNumber);
             }
 
