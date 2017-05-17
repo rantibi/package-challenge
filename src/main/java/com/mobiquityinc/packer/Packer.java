@@ -17,8 +17,8 @@ public class Packer {
     private static final String COST = "cost";
     private static final String PACKAGE_REGEX = "\\((?<" + INDEX + ">\\d+)\\,(?<" + WEIGHT + ">\\d+(\\.\\d{1,2})?)\\,€(?<" + COST + ">\\d+(\\.\\d{1,2})?)\\)";
     private static final int MAX_ITEMS_IN_LINE = 15;
-    private static final int MAX_WEIGHT = 100;
-    private static final int MAX_COST = 100;
+    private static final int MAX_WEIGHT = 100 * 100;
+    private static final int MAX_COST = 100 * 100;
 
     public static String pack(String inputPath) throws APIException {
         return parsedInputFile(inputPath).stream()
@@ -50,10 +50,10 @@ public class Packer {
             throw new APIException("Line must contain exactly one `:`", line, lineNumber);
         }
 
-        final double maxWeight;
+        final int maxWeight;
 
         try {
-            maxWeight = Double.parseDouble(splited[0]);
+            maxWeight = (int) (Double.parseDouble(splited[0]) * 100);
         } catch (NumberFormatException e) {
             throw new APIException("Left side of `:` must be a number", e, line, lineNumber);
         }
@@ -69,8 +69,8 @@ public class Packer {
             }
 
             try {
-                Long index = Long.valueOf(matcher.group(INDEX));
-                Double weight = Double.valueOf(matcher.group(WEIGHT));
+                Integer index = Integer.valueOf(matcher.group(INDEX));
+                int weight = (int) (Double.valueOf(matcher.group(WEIGHT)) * 100);
                 Double cost = Double.valueOf(matcher.group(COST));
 
                 if (index > MAX_ITEMS_IN_LINE || index < 0) {
@@ -110,61 +110,48 @@ public class Packer {
         return new ParsedLine(maxWeight, packages);
     }
 
-    private static String getBestCombinationAsString(double maxWeight, List<Package> packages) {
-        List<Combination> combinations = getCombination(packages);
-        Optional<Combination> bestCombination = getBestCombination(maxWeight, combinations);
+    private static String getBestCombinationAsString(int maxWeight, List<Package> packages) {
+        int n = packages.size() + 1;
+        int w = maxWeight + 1;
+        double[][] a = new double[n][w];
 
-        if (!bestCombination.isPresent()) {
-            return "-";
+
+        for (int i = 1; i < n; i++) {
+            Package pack = packages.get(i - 1);
+
+            for (int j = 1; j < w; j++) {
+                if (pack.getWeight() > j) {
+                    a[i][j] = a[i - 1][j];
+                } else {
+                    a[i][j] = Math.max(a[i - 1][j], a[i - 1][j - pack.getWeight()] + pack.getCost());
+                }
+            }
         }
 
-        return bestCombination.get().getPackages().stream()
-                .map(p -> Long.toString(p.getIndex()))
-                .collect(Collectors.joining(","));
-    }
+        List<Integer> indexes = new ArrayList<>();
 
-    private static Optional<Combination> getBestCombination(double maxWeight, List<Combination> combinations) {
-        return combinations.stream()
-                .filter(combination -> combination.getWeight() <= maxWeight)
-                .sorted((combination1, combination2) -> {
-                    // the higher price first
-                    int compare = Double.compare(combination2.getCost(), combination1.getCost());
+        int j = maxWeight;
 
-                    if (compare != 0) {
-                        return compare;
-                    }
-
-                    // the lower weight first
-                    return Double.compare(combination1.getWeight(), combination2.getWeight());
-                })
-                .findFirst();
-    }
-
-    private static List<Combination> getCombination(List<Package> packages) {
-        return getCombination(packages, 0, new ArrayList<>());
-    }
-
-    private static List<Combination> getCombination(List<Package> packages, int i, List<Combination> combinations) {
-        if (i == packages.size()) {
-            return combinations;
+        for (int i = n - 1; i > 0; i--) {
+            if (a[i][j] != a[i - 1][j]) {
+                indexes.add(packages.get(i - 1).getIndex());
+                j -= packages.get(i - 1).getWeight();
+            }
         }
 
-        // form each combination create add combination that contain the package i,
-        // add leave the original combination
-        List<Combination> newCombinations = combinations.stream()
-                .map(combination -> combination.add(packages.get(i)))
-                .collect(Collectors.toList());
-        combinations.addAll(newCombinations);
-
-        // add combination that hold only this single package
-        combinations.add(new Combination().add(packages.get(i)));
-        return getCombination(packages, i + 1, combinations);
+        String result =
+                indexes.stream()
+                        .mapToInt(i -> i)
+                        .sorted()
+                        .mapToObj(index -> Integer.toString(index))
+                        .collect(Collectors.joining(","));
+        return result.isEmpty() ? "-" : result;
     }
 
     @Data
     @AllArgsConstructor
     private static class ParsedLine {
-        private double maxWeight;
+        private int maxWeight;
         private List<Package> packages;
     }
 }

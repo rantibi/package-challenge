@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class Package {
-    private long index;
-    private double weight;
+    private int index;
+    private int weight;
     private double cost;
 }
