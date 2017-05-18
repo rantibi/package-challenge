@@ -129,8 +129,9 @@ public class Packer {
         }
 
         List<Integer> indexes = new ArrayList<>();
-
         int j = maxWeight;
+        double totalcost = a[n - 1][w - 1];
+        for (; j > 0 && a[n - 1][j - 1] == totalcost; j--);
 
         for (int i = n - 1; i > 0; i--) {
             if (a[i][j] != a[i - 1][j]) {
